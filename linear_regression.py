@@ -7,9 +7,7 @@ from torchvision import transforms, models
 import torch.nn as nn
 import torch.optim as optim
  
-# ----------------------------
-# Dataset
-# ----------------------------
+# Define dataset format
 class RotationDataset(Dataset):
     def __init__(self, dataFrame, transform=None):
         self.data = dataFrame
@@ -30,9 +28,7 @@ class RotationDataset(Dataset):
         angle = angle / 45.0
         return image, torch.tensor(angle, dtype=torch.float32)
  
-# ----------------------------
-# Accuracy function
-# ----------------------------
+# Define accuracy function (allow +- 25 degree error)
 def within_margin(pred_scaled, tgt_scaled, margin=25.0):
     # Rescale back to degrees
     pred_deg = pred_scaled * 45.0
@@ -40,18 +36,15 @@ def within_margin(pred_scaled, tgt_scaled, margin=25.0):
     diff = (pred_deg - tgt_deg).abs()
     return (diff <= margin).float().mean().item()
  
-# ----------------------------
-# Load data
-# ----------------------------
-train_df = pd.read_csv('data/combined_train_relative.csv')
+# Load dataset
+train_df = pd.read_csv('your_csv_train_file.csv')
 train_df['filename'] = train_df['filename'].apply(lambda x: "data/" + x.replace("\\", "/"))
  
-val_df = pd.read_csv('data/combined_validation_relative.csv')
+val_df = pd.read_csv('your_csv_val_file.csv')
 val_df['filename'] = val_df['filename'].apply(lambda x: "data/" + x.replace("\\", "/"))
  
-# ----------------------------
-# Transforms
-# ----------------------------
+# Data transformation and augmentation
+# Ensure data transformation does not include rotate flip, or anything that effect the angle unless we update the angles accordingly
 imagenet_norm = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
  
@@ -82,7 +75,8 @@ aug_transform3 = transforms.Compose([
     transforms.ToTensor(),
     imagenet_norm
 ])
- 
+
+# Combine original data with augmented data
 train_dataset = ConcatDataset([
     RotationDataset(train_df, transform=base_transform),
     RotationDataset(train_df, transform=aug_transform1),
@@ -95,22 +89,19 @@ val_dataset = RotationDataset(val_df, transform=base_transform)
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=4)
 val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False, num_workers=4)
  
-# ----------------------------
-# Model
-# ----------------------------
+# Load our pre-trained model
 model = models.resnet18(pretrained=True)
 model.fc = nn.Linear(model.fc.in_features, 1)  # Regression output
- 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+# Assign device to run the execution 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu") # 0 is the default GPU index
 print("Using device:", device)
 if torch.cuda.is_available():
     print("GPU:", torch.cuda.get_device_name(device))
  
 model = model.to(device)
- 
-# ----------------------------
+
 # Training setup
-# ----------------------------
 criterion = nn.SmoothL1Loss(beta=5.0)  # Huber loss
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
@@ -124,9 +115,7 @@ early_stopping_counter = 0
  
 train_losses, val_losses = [], []
  
-# ----------------------------
-# Training loop
-# ----------------------------
+# Train model
 for epoch in range(num_epochs):
     model.train()
     total_train_loss = 0.0
@@ -183,9 +172,7 @@ for epoch in range(num_epochs):
             print("Early stopping triggered.")
             break
  
-# ----------------------------
 # Plot losses
-# ----------------------------
 plt.plot(range(1, len(train_losses)+1), train_losses, label='Train Loss')
 plt.plot(range(1, len(val_losses)+1), val_losses, label='Validation Loss')
 plt.xlabel('Epoch')
