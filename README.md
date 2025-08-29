@@ -19,7 +19,7 @@ To run the training and testing code, ensure you have downloaded all of the nece
 - `pip install pandas`
 - `pip install torch`
 - `pip install pillow`
-- `pip install torchvision
+- `pip install torchvision`
 - `pip install matplotlib`
 - `pip install numpy`
 
@@ -32,5 +32,13 @@ Training a deep learning model involves selecting the right parameters to ensure
 - Optimizer: Adam (provides adaptive learning rates and efficient optimization
 - Scheduler: ReduceLROnPlateau (reduces the learning rate when the model stops improving)
 - Early Stopping: A regularization technique that prevents overfitting by halting training before the model memorizes irrelevant patterns and noise. Early stopping also helps identify optimal epochs and avoids unnecessary training.
+
+## Challenges + Reflection
+In the linear_regression.py file, we aim to train a deep learning model that can accurately predict the angle value of the carotid artery based on images. However, accurately detecting angles poses a challenge, as similar images may exhibit different angles due to rotation. Therefore, our model is designed to classify detections with a 25-degree offset as true. This approximation is acceptable as we intend to guide users on whether to rotate left or right.
+
+The performance of the machine learning model is influenced by several factors, including the quality of the data, hyperparameters, and the training process. Initially, the model's accuracy was moderately low, hovering around 50%. This indicated a weak correlation between the images and the angle predictions. To address this issue, we conducted multiple training sessions while adjusting hyperparameters such as the number of epochs, learning rate, and patience. Despite these efforts, we observed that the accuracy did not improve significantly, peaking at only 71%.
+
+Upon further analysis of our dataset, we discovered inconsistencies; for example, two images with a similar tilt, such as a slight tilt to the right, could correspond to vastly different angles, like -5 and 19 degrees. This inconsistency has contributed to the model's confusion between different predictions. With properly curated data, we believe the model can achieve better accuracy through tuning and optimization.
+
 
 
